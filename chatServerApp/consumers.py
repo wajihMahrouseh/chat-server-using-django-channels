@@ -2,6 +2,7 @@ import json
 
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 
 class ChatConsumer(WebsocketConsumer):
@@ -163,3 +164,47 @@ class ChatConsumer(WebsocketConsumer):
 
         # Send message to WebSocket
         self.send(text_data=json.dumps({"message": message}))
+
+
+class AsyncChatConsumer(AsyncWebsocketConsumer):
+    """
+    This new code is for ChatConsumer is very similar to the original code, with the following differences:
+        - ChatConsumer now inherits from AsyncWebsocketConsumer rather than WebsocketConsumer.
+        - All methods are async def rather than just def.
+        - await is used to call asynchronous functions that perform I/O.
+        - async_to_sync is no longer needed when calling methods on the channel layer.
+
+
+        Even if ChatConsumer did access Django models or other synchronous code it would still be possible to rewrite it as asynchronous. 
+        Utilities like asgiref.sync.sync_to_async and channels.db.database_sync_to_async can be used to call synchronous code from an asynchronous consumer. 
+        The performance gains however would be less than if it only used async-native libraries.
+    """
+    async def connect(self):
+        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+        self.room_group_name = f"chat_{self.room_name}"
+
+        # Join room group
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave room group
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    # Receive message from WebSocket
+    async def receive(self, text_data):
+        text_data_json = json.loads(text_data)
+        message = text_data_json["message"]
+
+        # Send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name, {"type": "chat.message", "message": message}
+        )
+
+    # Receive message from room group
+    async def chat_message(self, event):
+        message = event["message"]
+
+        # Send message to WebSocket
+        await self.send(text_data=json.dumps({"message": message}))
