@@ -1,0 +1,29 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# Match all files
+[*]
+# Use spaces for indentation
+indent_style = space
+# Set indentation size to 4 spaces
+indent_size = 4
+# Use CRLF line endings
+end_of_line = crlf
+# Use UTF-8 encoding
+charset = utf-8
+# Don't trim trailing whitespace
+trim_trailing_whitespace = false
+# Don't insert a final newline
+insert_final_newline = false
+
+# Match Django template files
+[*.html]
+# Use the same settings as above
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = false
+insert_final_newline = false
